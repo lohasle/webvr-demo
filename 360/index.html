@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <meta name="viewport" content="initial-scale=1.0"/>
+    <meta http-equiv="pragma" content="no-cache">
+    <meta http-equiv="cache-control" content="no-cache">
+    <meta http-equiv="expires" content="0">
+    <script src="js/three.min.js"></script>
+    <script src="js/photo-sphere-viewer.js"></script>
+    <style>
+        html, body {
+            margin: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        #container {
+            width: 100%;
+            height: 100%;
+        }
+
+        .action {
+            position: fixed;
+            top: 0;
+            z-index: 999;
+        }
+    </style>
+</head>
+<body>
+<div class="action">
+    <button id="btn1" onclick=loadChangJing("images/sun.jpg")>场景1</button>
+    <button name="btn2" onclick=loadChangJing("images/snow.jpg")>场景2</button>
+    <label style="margin-left: 20px" for="file">自定义场景</label>
+    <input id="file" type="file" title="自定义场景">
+</div>
+
+<div id="container"></div>
+
+<script>
+    document.getElementById('file').addEventListener('change', upload, false);
+
+    function upload() {
+        // Retrieve the chosen file and create the FileReader object
+        var file = document.getElementById('file').files[0];
+        var reader = new FileReader();
+
+        reader.onload = function () {
+            var div = document.getElementById('container');
+
+            var PSV = new PhotoSphereViewer({
+                // Panorama, given in base 64
+                panorama: reader.result,
+
+                // Container
+                container: div,
+
+                // Deactivate the animation
+                time_anim: false,
+
+                // Display the navigation bar
+                navbar: true,
+
+                // Resize the panorama
+                size: {
+                    width: '100%',
+                    height: '500px'
+                },
+
+                // No XMP data
+                usexmpdata: false
+            });
+        };
+
+        reader.readAsDataURL(file);
+    }
+
+
+    function loadChangJing(img) {
+        var div = document.getElementById('container');
+        var PSV = new PhotoSphereViewer({
+            panorama: img,
+            container: div,
+            time_anim: 2000,
+            navbar: true,
+            navbar_style: {
+                backgroundColor: 'rgba(58, 67, 77, 0.7)'
+            },
+        });
+    }
+    loadChangJing('images/snow.jpg');
+
+</script>
+</body>
+</html>

@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0, minimal-ui" />
+    <meta property="og:url" content="http://sphcst.com/fkq16" />
+    <meta property="og:site_name" content="VR Photo Sphere Viewer" />
+    <meta property="og:title" content="VR Photo Sphere Viewer - sphcst.com/fkq16" />
+    <meta property="og:description" content="Upload and share your photo spheres and panoramas in 360 degrees." />
+    <meta property="og:image" content="http://sphcst.com/files/sphere_57512b942b0eb_padded.jpg" />
+    <link href="style.css" rel="stylesheet" />
+    <script src="js/three.min.js"></script>
+    <script src="js/StereoEffect.js"></script>
+    <script src="js/DeviceOrientationControls.js"></script>
+    <script src="js/OrbitControls.js"></script>
+    <script src="js/jquery.js"></script>
+    <style>
+
+        .action{
+            position: fixed;
+            top:0;
+            z-index: 999;
+        }
+    </style>
+</head>
+<body>
+<div id="viewer"></div>
+<div id="viewer-toolbar">
+    <div class="action">
+        <button id="btn1" onclick=loadChangJing("files/sun.jpg")>场景1</button>
+        <button name="btn2" onclick=loadChangJing("files/snow.jpg")>场景2</button>
+        <!--<input style="margin-left: 20px" id="fileInput" type="text" placeholder="输入图片地址">-->
+        <!--<button id="btn3">浏览</button>-->
+    </div>
+    <div id="togglemode">
+        <input id="togglemode-checkbox" name="togglemode-checkbox" type="checkbox" />
+        <label class="togglemode-label" for="togglemode-checkbox">
+            <span class="togglemode-icon"></span>
+        </label>
+    </div>
+    <!--<div id="upload-block">-->
+        <!--<a class="upload" href="http://viewer.spherecast.org/upload/"></a>-->
+    <!--</div>-->
+    <!--<div id="share-block">-->
+        <!--<a class="share"></a>-->
+    <!--</div>-->
+    <div id="fullscreen-block">
+        <a class="fullscreen"></a>
+    </div>
+
+    <div id="share">
+        <a class="close"></a>
+
+        <label for="url">URL</label>
+        <input id="share-url" name="share-url" type="text" value="http://sphcst.com/fkq16" readonly="readonly" />
+
+        <label for="embed">Embed</label>
+        <textarea id="share-embed" name="share-embed" readonly="readonly">&lt;iframe src="http://sphcst.com/fkq16/embed" width="640" height="320" frameborder="0" allowfullscreen /&gt;</textarea>
+    </div>
+</div>
+<script>
+    var camera, scene, renderer;
+    var effect, controls;
+    var element, container;
+    var vrMode = false;
+
+    var clock = new THREE.Clock();
+
+    function loadChangJing(filePath){
+        init(filePath);
+    }
+
+    loadChangJing('files/sun.jpg');
+    animate();
+
+
+    function init(filepath) {
+        renderer = new THREE.WebGLRenderer();
+        element = renderer.domElement;
+        container = document.getElementById('viewer');
+//        container.appendChild(element);
+
+        $(container).html($(element));
+        effect = new THREE.StereoEffect(renderer);
+        effect.separation = -6.2;
+        effect.setSize((window.innerWidth/2), window.innerHeight);
+
+        scene = new THREE.Scene();
+
+        camera = new THREE.PerspectiveCamera(90, (window.innerWidth/2) / window.innerHeight, 0.001, 10000);
+        camera.position.set(0, 0, 0);
+        scene.add(camera);
+
+        controls = new THREE.OrbitControls(camera, element);
+//		controls.rotateUp(Math.PI / 4);
+        controls.rotateUp(-Math.PI / 12);
+        controls.target.set(
+                camera.position.x + 0.1,
+                camera.position.y,
+                camera.position.z
+        );
+        controls.noZoom = true;
+        controls.noPan = true;
+
+        window.addEventListener('deviceorientation', setOrientationControls, true);
+
+
+        var currentSphere = new THREE.Mesh(
+                new THREE.SphereGeometry(100, 32, 32),
+                new THREE.MeshBasicMaterial({
+                    map: THREE.ImageUtils.loadTexture(filepath)
+                })
+        );
+        currentSphere.scale.x = -1;
+        scene.add(currentSphere);
+
+        window.addEventListener('resize', resize, false);
+        setTimeout(resize, 1);
+
+    }
+
+    function setOrientationControls(e) {
+        if (!e.alpha)
+        {
+            return;
+        }
+
+        vrMode = true;
+        $('#togglemode-checkbox:checkbox').attr('checked', true);
+
+
+        controls = new THREE.DeviceOrientationControls(camera, true);
+        controls.connect();
+        controls.update();
+
+        // Full screen requires clicking the icon.
+//		element.addEventListener('click', fullscreen, false);
+
+        window.removeEventListener('deviceorientation', setOrientationControls, true);
+    }
+
+    function startProject()
+    {
+    }
+
+    function resize() {
+        var width = container.offsetWidth;
+        var height = container.offsetHeight;
+
+        camera.aspect = width / height;
+        camera.updateProjectionMatrix();
+
+        renderer.setSize(width, height);
+        effect.setSize(width, height);
+    }
+
+    function update(dt) {
+        resize();
+
+        camera.updateProjectionMatrix();
+
+        controls.update(dt);
+    }
+
+    function render(dt)
+    {
+        if (vrMode == true)
+        {
+            effect.render(scene, camera);
+        }
+        else
+        {
+            renderer.render(scene, camera);
+        }
+    }
+
+    function animate(t) {
+        requestAnimationFrame(animate);
+
+        update(clock.getDelta());
+        render(clock.getDelta());
+    }
+
+    function isFullScreen() {
+        var fsElem =
+                document.fullscreenElement ||
+                document.msFullscreenElement ||
+                document.mozFullscreenElement ||
+                document.webkitFullscreenElement;
+
+        return ((fsElem != null) && (fsElem != undefined));
+    }
+
+    function fullscreen() {
+        if (container.requestFullscreen) {
+            container.requestFullscreen();
+        } else if (container.msRequestFullscreen) {
+            container.msRequestFullscreen();
+        } else if (container.mozRequestFullScreen) {
+            container.mozRequestFullScreen();
+        } else if (container.webkitRequestFullscreen) {
+            container.webkitRequestFullscreen();
+        }
+    }
+
+    $(document).ready(function()
+    {
+        $('#togglemode-checkbox:checkbox').change(function()
+        {
+            if ($(this).is(':checked'))
+            {
+                vrMode = true;
+            }
+            else
+            {
+                vrMode = false;
+            }
+        });
+
+        $('#fullscreen-block a.fullscreen').on('click', function()
+        {
+            fullscreen();
+        });
+
+        $('#share-block a.share').on('click', function()
+        {
+            $('#share').show();
+        });
+
+        $('#share a.close').on('click', function()
+        {
+            $('#share').hide();
+        });
+
+        $('#share-url, #share-embed').on('focus', function()
+        {
+            $(this).select();
+        });
+    });
+
+    // todo
+//    document.getElementById('btn3').addEventListener('click', diyCj, false);
+//
+//    function diyCj() {
+//        var value = document.getElementById('fileInput').value;
+//        loadChangJing(value);
+//    }
+</script>
+
+</body>
+</html>
